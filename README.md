@@ -192,9 +192,9 @@ enable https, and set the endpoint to https://localhost:8086
   https-private-key = "/etc/influxdb/selfsigned-influxdb.key"
 ```
 
-generate certification file and key save to /etc/ssl/grafana-key.pem, /etc/ssl/grafana-cert.pem
+generate certification file and key save to /etc/ssl/selfsigned-influxdb.key, /etc/ssl/selfsigned-influxdb.crt
 
-    move to grafana configuration directory
+    move to influxdb configuration directory
 ```bash
 cd /etc/influxdb
 ```
@@ -213,7 +213,7 @@ openssl x509 -req -days 365 -in selfsigned-influxdb.csr -signkey selfsigned-infl
     * Locality: LA
     * Orgnization: Bitconch PTE Ltd.
     * Unit Name: Dev-Dashboard-InfluxDB
-    * Common Name: https://47.103.38.208:8086(server ip)
+    * Common Name: localhost(server ip)
 
     change the certification and key file permission
 ```bash
