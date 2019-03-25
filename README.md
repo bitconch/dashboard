@@ -1,9 +1,10 @@
 
-## Use Grafana to Setup a Dashboard
 
+Use Grafana to Setup a Dashboard
+=======
 * * *
 
-### Install Grafana on Ubuntu
+## Install Grafana on Ubuntu
 
 ```bash
 wget https://dl.grafana.com/oss/release/grafana_6.0.1_amd64.deb 
@@ -15,16 +16,15 @@ sudo dpkg -i grafana_6.0.1_amd64.deb
 
 * * *
 
-### Configure Grafana
+## Configure Grafana
 
 Semicolons (the ; char) are the standard way to comment out lines in a .ini file.
 Change the port number to 9530
-
+1. Open configure file grafana.ini with vim editor
 ```bash
 vim /etc/grafana/grafana.ini
-
 ```
-in grafana ini file, comment starts with ```#```, value comments with ```;```
+2. change port number to 9530, in grafana ini file, comment starts with ```#```, value comments with ```;```
 
 ```bash
 # The http port  to use
@@ -35,12 +35,12 @@ http_port = 9530
 root_url = http://localhost:9530
 
 ```
-save and restart grafana service
+3. save and restart grafana service
 
 ```
 systemctl daemon-reload
 systemctl start grafana-server
-systemctl status grafana-server
+systemctl status grafana-server （"Press 'Q' to quit"）
 systemctl restart grafana-server
 ```
 check if grafana works: open browser to http://localhost:9530
@@ -49,15 +49,15 @@ check if grafana works: open browser to http://localhost:9530
 
 * * *
 
-### Set Grafana to HTTPS
+## Set Grafana to HTTPS
 
-1. generate certification file and key save to /etc/ssl/grafana-key.pem, /etc/ssl/grafana-cert.pem
+### 1. generate certification file and key save to /etc/ssl/grafana-key.pem, /etc/ssl/grafana-cert.pem
 
-    move to grafana configuration directory
+1. move to grafana configuration directory
 ```bash
 cd /etc/grafana
 ```
-    create a temporary self-signed certificate
+-    create a temporary self-signed certificate
 
 ```bash
 openssl genrsa -out selfsigned-grafana.key 2048
@@ -65,15 +65,15 @@ openssl req -new -key selfsigned-grafana.key -out selfsigned-grafana.csr
 openssl x509 -req -days 365 -in selfsigned-grafana.csr -signkey selfsigned-grafana.key -out selfsigned-grafana.crt
 ```
 
-    Enter passphrase, and answers some stupid questions like 
+2.  Enter passphrase, and answers some stupid questions like 
 
-    * Country Name
-    * State
-    * Locality
-    * Orgnization 
-    * Unit Name 
+    * Country Name likes US
+    * State likes CA 
+    * Locality likes LA
+    * Orgnization  likes Bitconch PTE Ltd.
+    * Unit Name Dev-Dashboard
 
-    change the certification and key file permission
+3.  change the certification and key file permission
 ```bash
 chown grafana:grafana selfsigned-grafana.crt
 chown grafana:grafana selfsigned-grafana.key
@@ -81,7 +81,7 @@ chmod 400 selfsigned-grafana.crt
 chmod 400 selfsigned-grafana.key
 ```
 
-2. change grafana configuration file and restart service
+### 2. change grafana configuration file and restart service
 
 ```bash
 vim /etc/grafana/grafana.ini
@@ -107,36 +107,37 @@ cookie_secure = true
 
 ```
 
-3. restart the grafana service 
+### 3. restart the grafana service 
 
 ```bash
-systemctl status grafana-server
 systemctl restart grafana-server
+systemctl status grafana-server （"Press 'Q' to quit"）
 ```
 
-4. check the grafana logging
+### 4. check the grafana logging
 ```bash
 vim /var/log/grafana/grafana.log
 ```
-5. verify https works, open browser and go to https://localhost:9530
+### 5. verify https works, open browser and go to https://localhost:9530
 
 
 * * *
 
 
 
-### Install Influxdb
+ Install Influxdb
+=======
 
+**You can install influxdb in following ways:**
 
-1. install influxdb
-download and manually install
+* download and manually install
 
 ```
 wget https://dl.influxdata.com/influxdb/releases/influxdb_1.5.0_amd64.deb
 sudo dpkg -i influxdb_1.5.0_amd64.deb
 
 ```
-add apt repo from the [offical website](https://docs.influxdata.com/influxdb/v1.7/introduction/installation/)
+* add apt repo from the [offical website](https://docs.influxdata.com/influxdb/v1.7/introduction/installation/)
 ```
 
 wget -qO- https://repos.influxdata.com/influxdb.key | sudo apt-key add -
@@ -145,23 +146,29 @@ echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stabl
 
 ```
 
-install from apt repo
+*  install from apt repo
 
 ```
 sudo apt-get update && sudo apt-get install influxdb
 sudo service influxdb start
 ```
-everything looks fine 
-
+**everything looks fine if output looks like below when influxd service launched:**
+**Open a influxdb client by type "influx" in terminal**
+```
+influx
+```
+**If everything goes well The output should look like this:**
 ```
 Connected to http://localhost:8086 version 1.7.4
 InfluxDB shell version: 1.7.4
 Enter an InfluxQL query
+
+```
+**Exit from client by type "exit" and press "Enter" key**
+```
 > exit
 ```
-
-
-2. Configure Influxdb
+##  Configure Influxdb
 
 The configuration file for InfluxDB is ```influxdb.conf```, it has different location per different OS
 
@@ -169,13 +176,83 @@ The configuration file for InfluxDB is ```influxdb.conf```, it has different loc
 
 * MacOS: ```/usr/local/etc/influxdb.conf```
 
+### enable https, and set the endpoint to https://metrics.bitconch.org
+1. **Generate Root SSL certificate** 
+```bash 
+openssl genrsa -des3 -out rootCA.key 2048
+openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 1024 -out rootCA.pem
+```
+Enter passphrase, and answers some stupid questions like 
+```
+* Country Name: US
+* State: CA
+* Locality: LA
+* Orgnization: Bitconch PTE Ltd.
+* Unit Name: Dev-Dashboard-InfluxDB
+* Common Name: Bitconch Authority
+```
+2. **Trust the root SSL certificate**
+```bash
+mkdir -p /usr/local/share/ca-certificates/influxdb
+cp rootCA.pem /usr/local/share/ca-certificates/influxdb/rootCA.crt
+update-ca-certificates
+```
+3. **Generate Domain SSL certificate**
+- **Create a new OpenSSL configuration file server.csr.cnf with following contents**
+```
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+
+[dn]
+C=US
+ST=CA
+L=LA
+O=Bitconch PTE Ltd.
+OU=Dev-Dashboard-InfluxDB
+emailAddress=hello@example.com
+CN = metrics.bitconch.org
+```
+- **Create a v3.ext file with following contents in order to create a X509 v3 certificate**
+```
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = metrics.bitconch.org
+```
+- **Create a certificate key for metrics.bitconch.org using the configuration settings stored in server.csr.cnf. This key is stored in server.key.**
+```
+openssl req -new -sha256 -nodes -out server.csr -newkey rsa:2048 -keyout server.key -config <( cat server.csr.cnf )
+```
+- **A certificate signing request is issued via the root SSL certificate we created earlier to create a domain certificate for metrics.bitconch.org. The output is a certificate file called server.crt.**
+```
+openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 500 -sha256 -extfile v3.ext
+```
+4. **Place the private key file (.key) and the signed certificate file (.crt) in the /etc/ssl directory.**
+```bash
+cp server.key /etc/ssl/
+cp server.crt /etc/ssl/
+```
+5. **Set certificate file permissions**
+```bash
+sudo chown influxdb:influxdb /etc/ssl/server.crt
+sudo chmod 644 /etc/ssl/server.crt
+sudo chmod 600 /etc/ssl/server.key
+```
+6. **Enable Https in the influxdb configuration file**
 ```bash
 vim /etc/influxdb/influxdb.conf
 ```
-
-enable https, and set the endpoint to https://localhost:8086
-
+- https-enabled to true
+- https-certificate to /etc/ssl/server.crt
+- https-private-key to /etc/ssl/server.key
 ```
+
 [http]
 
   [...]
@@ -185,115 +262,51 @@ enable https, and set the endpoint to https://localhost:8086
 
   [...]
 
-  # The TLS or SSL certificate to use when HTTPS is enabled.
-  https-certificate = "/etc/influxdb/selfsigned-influxdb.crt"
+  # The SSL certificate to use when HTTPS is enabled.
+  https-certificate = "server.crt"
 
   # Use a separate private key location.
-  https-private-key = "/etc/influxdb/selfsigned-influxdb.key"
+  https-private-key = "server.key"
 ```
-
-generate certification file and key save to /etc/ssl/grafana-key.pem, /etc/ssl/grafana-cert.pem
-
-    move to grafana configuration directory
-```bash
-cd /etc/influxdb
-```
-    create a temporary self-signed certificate
+7. **enable authentication**
 
 ```bash
-openssl genrsa -out selfsigned-influxdb.key 2048
-openssl req -new -key selfsigned-influxdb.key -out selfsigned-influxdb.csr
-openssl x509 -req -days 365 -in selfsigned-influxdb.csr -signkey selfsigned-influxdb.key -out selfsigned-influxdb.crt
-```
-
-    Enter passphrase, and answers some stupid questions like 
-
-    * Country Name: US
-    * State: CA
-    * Locality: LA
-    * Orgnization: Bitconch PTE Ltd.
-    * Unit Name: Dev-Dashboard-InfluxDB
-    * Common Name: https://47.103.38.208:8086(server ip)
-
-    change the certification and key file permission
-```bash
-chown influxdb:influxdb selfsigned-influxdb.crt
-chown influxdb:influxdb selfsigned-influxdb.key
-chmod 400 selfsigned-influxdb.crt 
-chmod 400 selfsigned-influxdb.key
-```
-
-check the influxdb 
-
-```
-sudo systemctl status influxdb
-
-```
-
-stop the influxdb 
-
-```
-sudo systemctl stop influxdb
-```
-
-resetart the infludb 
-
-```
-sudo systemctl restart influxdb
-```
-
-connect to https enabled influxdb, since we are using selfsigned certificate, make sure the ```unsafeSsl``` is used.
-
-```
- influx  -ssl -unsafeSsl -host localhost
-
-```
-
-3. enable authentication
-
-```bash
-
 vim /etc/influxdb/influxdb.conf
-
-
 ```
 
-```bash
-
-[http]
-
-# Determines whether user authentication is enabled over HTTP/HTTPS.
-  auth-enabled = true
+## check the influxdb 
+- start the influxdb
+```
+chown -R influxdb:influxdb /var/lib/
+systemctl start influxdb
+systemctl status influxdb
 ```
 
-restart the influxdb
+- stop the influxdb 
 
 ```
-sudo systemctl stop influxdb
+systemctl stop influxdb
+```
+
+- resetart the infludb 
+
+```
 sudo systemctl restart influxdb
-sudo systemctl status influxdb
 ```
-4. create user for influxdb
 
-```bash
-influx  -ssl -unsafeSsl -host localhost
-```
-create admin, and a user with admin access
-
-```bash
-CREATE USER admin WITH PASSWORD '<password>' WITH ALL PRIVILEGES
+- connect to https enabled influxdb, since we are using selfsigned certificate, make sure the ```unsafeSsl``` is used.
 
 ```
-log off and log in again
-```
-influx  -ssl -unsafeSsl -host localhost -username 'admin' -password '<password>'
+ influx  -ssl -unsafeSsl -username admin -password 'password'
 
 ```
-create another user with admin access, and log in using the new user
+
+
+- create another user with admin access, and log in using the new user
 ```bash
 CREATE USER caesar WITH PASSWORD '<password>' WITH ALL PRIVILEGES
 exit
-influx  -ssl -unsafeSsl -host localhost -username 'caesar' -password '<password>'
+influx  -ssl -unsafeSsl  -username 'caesar' -password '<password>'
 ```
 try new user's access, a dummy db is created and dropped.
 
@@ -322,16 +335,23 @@ _internal
 > CREATE DATABASE dashboard01
 ```
 
-### Add InfluxDB Self Signed Certificate 
+## Install  InfluxDB rootCA to your localhost
 
 * Ubuntu 
-
-
+1. Download the /usr/local/share/ca-certificates/influxdb/rootCA.crt
+```powershell
+scp -r -P 22 user@remote_host:/usr/local/share/ca-certificates/influxdb/rootCA.crt rootCA.crt
+```
+2. install certificate
+```powershell
+cp rootCA.crt /usr/local/share/ca-certificates/influxdb
+update-ca-certificates
+```
 * Windows
 
     Download the /etc/influxdb/selfsigned-influxdb.crt
 ```powershell
-scp -r -P 22 user@remote_host:/etc/influxdb/selfsigned-influxdb.crt remote_influxdb.crt
+scp -r -P 22 user@remote_host:/usr/local/share/ca-certificates/influxdb/rootCA.crt rootCA.crt
 ```
 
     Double click the crt file and resave to cer file 
@@ -339,6 +359,10 @@ scp -r -P 22 user@remote_host:/etc/influxdb/selfsigned-influxdb.crt remote_influ
     Open and Run MMC
 
     Import the crt file
+
+
+
+
 
 
 ### Update the Grafana Dashboard Configuration
