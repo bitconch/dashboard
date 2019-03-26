@@ -269,11 +269,26 @@ vim /etc/influxdb/influxdb.conf
   https-private-key = "server.key"
 ```
 7. **enable authentication**
-
-```bash
-vim /etc/influxdb/influxdb.conf
+- auth-enabled to true
 ```
+# Determines whether user authentication is enabled over HTTP/HTTPS.
+  auth-enabled = true
 
+```
+8. **Setting Global Variable**
+Add the following contents to $HOME/.profile
+```bash
+vim $HOME/.profile
+```
+```
+export INFLUX_HOST="https://metrics.bitconch.org"
+export INFLUX_DATABASE="<DataBase Name>"
+export INFLUX_USERNAME="<user name>"
+export INFLUX_PASSWORD="<password>"
+```
+```bash
+source $HOME/.profile
+```
 ## check the influxdb 
 - start the influxdb
 ```
